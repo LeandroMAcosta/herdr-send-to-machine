@@ -1,0 +1,34 @@
+# Move the work in front of you to another machine and keep going there.
+#
+# Nothing about any particular machine is configured here. `herdr machine list`
+# already stores the SSH target and the remote herdr session for every machine
+# you have added, so that list is the configuration: add a machine with
+# `herdr machine add`, and it shows up in this plugin's picker.
+
+id = "leandroacosta.send-to-machine"
+name = "Send to machine"
+version = "0.1.0"
+# Saved SSH machines, and `herdr machine list --json` with them, arrived in
+# 0.9.0. On anything older this plugin links without complaint and then finds no
+# destinations, which reads like a broken plugin rather than an old herdr.
+min_herdr_version = "0.9.0"
+description = "Send the current repo, uncommitted work and agent session to a saved machine, and open it there."
+platforms = ["macos", "linux"]
+
+# The action runs on the focused pane, where the invocation context names the
+# repository. It only forwards that context into the popup, because both the
+# machine picker and the confirmation need a terminal to read from.
+[[actions]]
+id = "send"
+title = "Send work to remote machine"
+description = "Push this repository, its uncommitted changes and the running agent session to a saved machine, then open a pane there."
+contexts = ["workspace", "pane", "global"]
+command = ["sh", "-c", 'exec "$HERDR_PLUGIN_ROOT/send.sh" open']
+
+[[panes]]
+id = "picker"
+title = "Send work to machine"
+placement = "popup"
+width = "80%"
+height = 24
+command = ["sh", "-c", 'exec "$HERDR_PLUGIN_ROOT/send.sh" run']
