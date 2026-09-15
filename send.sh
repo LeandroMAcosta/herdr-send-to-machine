@@ -48,7 +48,7 @@ if [ "${1:-run}" = open ]; then
   [ -n "$cwd" ] || cwd="$(ctx_field workspace_cwd)"
   [ -n "$cwd" ] || cwd="$PWD"
   exec "$herdr_bin" plugin pane open \
-    --plugin "${HERDR_PLUGIN_ID:-leandro.send-to-machine}" \
+    --plugin "${HERDR_PLUGIN_ID:-leandroacosta.send-to-machine}" \
     --entrypoint picker \
     --env "SEND_CWD=$cwd" \
     --env "SEND_AGENT=$(ctx_field focused_pane_agent)"
@@ -91,6 +91,14 @@ else
   printf '%s\n' "$machines" | nl -w2 -s') ' | cut -f1
   printf 'Number: '
   read -r pick || exit 0
+  # Validate before it reaches sed. An empty answer would become `sed -n p`,
+  # which prints every machine and picks a destination made of all of them
+  # concatenated; anything non-numeric makes sed fail with its own error and
+  # kills the popup before it can say why.
+  case "$pick" in
+    ''|*[!0-9]*) finish "Not a number: ${pick:-<empty>}" 1 ;;
+  esac
+  [ "$pick" -ge 1 ] && [ "$pick" -le "$count" ] || finish "No machine numbered $pick." 1
   chosen="$(printf '%s\n' "$machines" | sed -n "${pick}p")"
   [ -n "$chosen" ] || finish "No such machine." 1
 fi

@@ -10,12 +10,12 @@ resuming mid-conversation.
 ```
 ctrl+shift+m
 
-  Send to tron
+  Send to workbox
 
-    repo     /Users/you/Workspace/personal/dotfiles
+    repo     /Users/you/code/api
     branch   feat/thing
     changes  2 uncommitted file(s)
-    to       tron:/Users/you/Workspace/personal/dotfiles
+    to       workbox:/home/you/code/api
     session  claude a3448847-2404-42e9-b065-e834106ae6ec
 
   [enter] send   [n] send without the agent session   [q] cancel
@@ -87,9 +87,12 @@ same SSH connection you already have, into a private ref namespace so git never
 refuses a push to a branch checked out on the other side. The destination needs
 no GitHub credential, and this works on repositories with no remote at all.
 
-**Paths mirror relative to `$HOME`.** `~/Workspace/x` here becomes `~/Workspace/x`
-there, resolved against the *remote* home, so the two users and home directories
-need not match. A repository outside `$HOME` lands in `~/herdr-inbox/<repo>`.
+**Paths mirror relative to `$HOME`.** `~/code/api` here becomes `~/code/api`
+there, resolved against the *remote* home — which is why the example above sends
+a macOS `/Users/you/code/api` to a Linux `/home/you/code/api` without any
+configuration. The two usernames and home directories need not match. A
+repository outside `$HOME` has no such natural place and lands in
+`~/herdr-inbox/<repo>`.
 
 **The agent session is a file.** Claude Code transcripts live at
 `~/.claude/projects/<cwd with slashes as dashes>/<uuid>.jsonl`. The newest one
