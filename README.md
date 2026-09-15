@@ -53,8 +53,23 @@ Without a keybinding the action is still reachable from herdr's menus as
   the plugin uses `BatchMode=yes` and will not prompt for a password.
 - `git` on both sides, and `python3` locally for JSON parsing.
 
-Tested on macOS. It is plain POSIX `sh` and should work on Linux, but I have not
-run it there.
+## Platforms
+
+macOS and Linux.
+
+Day to day I run it macOS to macOS, which is the path that gets exercised
+end to end — including resuming the agent session on the far side.
+
+The Linux support is verified rather than assumed, but not equally: the script
+is run under `dash` as `/bin/sh` with GNU coreutils and GNU tar 1.35, covering
+the parts that differ from BSD userland — `tar --null -T -` for untracked files,
+`git diff HEAD --binary`, `date -u +%Y-%m-%dT%H:%M:%SZ` for the remote stash
+label, and every branch of the machine picker. All behave identically to macOS.
+`/bin/bash` is not required anywhere.
+
+What that does *not* cover is a real Linux-to-Linux send over a live SSH
+connection, or herdr's own popup handling on Linux. If you hit something there,
+open an issue — it is a supported platform, just a less-travelled one.
 
 ## What it does
 
