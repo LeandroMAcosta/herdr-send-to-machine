@@ -132,15 +132,16 @@ assert_quotable "$remote_path"
 
 # --- the agent session it carries ------------------------------------------
 # Claude Code transcripts are plain files under ~/.claude/projects/<slug>, where
-# the slug is the working directory with every slash turned into a dash. Copying
-# the newest one across and resuming it by id is what makes the work continue
-# rather than restart. The slug is computed from each side's own path, because
-# the two homes need not match.
+# the slug is the working directory with every character other than a letter or
+# digit turned into a dash, so /a/b.c_d is -a-b-c-d. Copying the newest one
+# across and resuming it by id is what makes the work continue rather than
+# restart. The slug is computed from each side's own path, because the two
+# homes need not match.
 
 transcript=''
 uuid=''
 if [ "${SEND_AGENT:-}" = claude ]; then
-  slug="$(printf '%s' "$repo" | tr '/' '-')"
+  slug="$(printf '%s' "$repo" | sed 's/[^A-Za-z0-9]/-/g')"
   transcript="$(ls -t "$HOME/.claude/projects/$slug"/*.jsonl 2>/dev/null | head -1 || true)"
   if [ -n "$transcript" ]; then uuid="$(basename "$transcript" .jsonl)"; fi
 fi
@@ -170,6 +171,21 @@ esac
 # Pushed into refs/herdr-send/ rather than straight onto the branch: pushing to
 # a branch that is checked out on the other side is refused by git, and the
 # namespace sidesteps that without weakening receive.denyCurrentBranch there.
+
+# A far copy kept identical by a file sync (reposync, Syncthing) already holds
+# all of it, and pushing, stashing and checking out there would only churn its
+# .git. The fingerprint is the branch, HEAD, the tracked diff and the content of
+# every untracked file, hashed without writing objects. Any mismatch, or a git
+# that prints the diff differently, falls back to the full send.
+fingerprint='git symbolic-ref -q HEAD && git rev-parse HEAD && git diff HEAD --binary | git hash-object --stdin && git ls-files -o --exclude-standard -z | xargs -0 git hash-object -- | git hash-object --stdin'
+here_fp="$(cd "$repo" && sh -c "$fingerprint" 2>/dev/null || true)"
+there_fp="$(rsh "cd '$remote_path' 2>/dev/null && $fingerprint" 2>/dev/null || true)"
+same_state=''
+if [ -n "$here_fp" ] && [ "$here_fp" = "$there_fp" ]; then same_state=1; fi
+
+if [ -n "$same_state" ]; then
+  printf '\n==> %s already has this exact state; no code to move\n' "$label"
+else
 
 printf '\n==> preparing %s\n' "$remote_path"
 rsh "mkdir -p '$remote_path' && cd '$remote_path' && { git rev-parse --git-dir >/dev/null 2>&1 || git init -q; }" \
@@ -208,12 +224,14 @@ if [ "$dirty" != 0 ]; then
   fi
 fi
 
+fi # same_state
+
 # --- move the agent session ------------------------------------------------
 
 start_cmd='claude'
 if [ -n "$transcript" ]; then
   printf '==> copying agent session\n'
-  remote_slug="$(printf '%s' "$remote_path" | tr '/' '-')"
+  remote_slug="$(printf '%s' "$remote_path" | sed 's/[^A-Za-z0-9]/-/g')"
   if rsh "mkdir -p '$remote_home/.claude/projects/$remote_slug'" \
      && scp -q "$transcript" "$target:$remote_home/.claude/projects/$remote_slug/"; then
     start_cmd="claude --resume $uuid"

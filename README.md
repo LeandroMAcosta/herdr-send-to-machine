@@ -97,6 +97,12 @@ no API behind it — so the plugin ends with a notification instead.
 checkout. Anything uncommitted already sitting on the other machine is put into a
 `herdr-send <timestamp>` stash first; `git stash list` over there gets it back.
 
+**A copy that is already identical is left alone.** When a file sync keeps the
+repository the same on both machines, steps 4 and 5 are skipped. That means the
+same branch, HEAD, uncommitted diff and untracked file contents on both sides.
+Only the session moves, and the far `.git` is not churned by a push, stash and
+checkout. Any difference, however small, takes the full path.
+
 **Nothing goes through GitHub.** The push targets `ssh://<target><path>` over the
 same SSH connection you already have, into a private ref namespace so git never
 refuses a push to a branch checked out on the other side. The destination needs
@@ -110,7 +116,7 @@ repository outside `$HOME` has no such natural place and lands in
 `~/herdr-inbox/<repo>`.
 
 **The agent session is a file.** Claude Code transcripts live at
-`~/.claude/projects/<cwd with slashes as dashes>/<uuid>.jsonl`. The newest one
+`~/.claude/projects/<cwd with every non-alphanumeric character as a dash>/<uuid>.jsonl`. The newest one
 for the repository is copied to the slug for the remote path, which is what makes
 `--resume` work across machines. Press `n` at the prompt to send the code without
 it.
